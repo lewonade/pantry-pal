@@ -8,9 +8,7 @@ const app = express();
 const upload = multer();
 
 // OpenAI API setup
-const openai = new OpenAI(
-	'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'
-);
+const openai = new OpenAI('YOUR-GPT4-VISION-API-KEY');
 
 app.post('/analyze-fridge', upload.single('fridgeImage'), async (req, res) => {
 	// Process the image and prepare it for the GPT model
