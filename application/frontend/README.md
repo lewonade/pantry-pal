@@ -1,4 +1,4 @@
-# pantry-pal
+# frontend
 
 ## Project setup
 ```
