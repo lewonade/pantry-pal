@@ -84,10 +84,18 @@ export default {
 		toggleAllergies() {
 			this.showAllergies = !this.showAllergies;
 		},
-
+		
 		saveAllergies() {
 			console.log('Selected Allergies:', this.selectedAllergies);
-			//bing bong
+			axios.post('http://localhost:3000/allergies', {
+				text: this.selectedAllergies
+			})
+			.then(response => {
+				console.log(response.data);
+			})
+			.catch(error => {
+				console.error('Error:', error);
+			});
 		},
 
 		onFileSelected(event) {
