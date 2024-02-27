@@ -1,6 +1,21 @@
 <template>
 	<div class="container">
 		<h1>Pantry-Pal</h1>
+		
+		<button @click="toggleAllergies" class="analyze-btn">{{ allergiesButtonLabel }}</button>
+		<div>
+            <div class="allergy-checkboxes">
+				<div v-if="showAllergies">
+					<div v-for="allergy in allergies" :key="allergy">
+						<input type="checkbox" :id="allergy" :value="allergy" v-model="selectedAllergies">
+						<label :for="allergy">{{ allergy }}</label>
+					</div>
+				</div>
+            </div>   
+        </div>
+
+		<button @click="saveAllergies" class="analyze-btn">Save Allergies</button>
+		
 		<div v-if="imageSrc" class="image-preview">
 			<h3>Preview Image</h3>
 			<img :src="imageSrc" alt="Uploaded image" class="uploaded-image" />
@@ -25,18 +40,51 @@ import axios from 'axios';
 export default {
 	data() {
 		return {
+			showAllergies: false,
 			selectedFile: null,
 			analysis: null,
 			isLoading: false,
 			imageSrc: null,
+			selectedAllergies: [],
+			allergies: [
+				"A - glutenhaltiges Getreide",
+				"B - Krebstiere",
+				"C - Ei",
+				"D - Fisch",
+				"E - Erdnuss",
+				"F - Soja",
+				"G - Milch oder Laktose",
+				"H - Schalenfrüchte",
+				"L - Sellerie",
+				"M - Senf",
+				"N - Sesam",
+				"O - Sulfite",
+				"P - Lupinen",
+				"R - Weichtiere"
+					]
 		};
 	},
 	computed: {
+		allergiesButtonLabel() {
+            return this.showAllergies ? 'Hide Allergies' : 'Show Allergies';
+        },
 		formattedMarkdown() {
 			return this.analysis ? this.simpleMarkdownToHtml(this.analysis.text) : '';
 		},
 	},
 	methods: {
+		toggleAllergies() {
+			console.log(this.showAllergies);
+            this.showAllergies = !this.showAllergies;
+			console.log(this.showAllergies);
+        },
+
+        saveAllergies() {
+            console.log("Selected Allergies:", this.selectedAllergies);
+            // Hier können Sie die Logik zum Speichern der Allergien implementieren,
+            // z.B. einen API-Aufruf, um die Auswahl zu speichern.
+        },
+
 		onFileSelected(event) {
 			this.selectedFile = event.target.files[0];
 			this.createImageSrc(this.selectedFile);
@@ -105,6 +153,27 @@ export default {
 
 * {
 	font-family: 'Mulish', sans-serif;
+}
+
+.label {
+  margin-bottom: 0.5em; /* Space between label and select */
+  font-size: 1.2em;
+  color: #333; /* Update color as needed */
+  font-weight: bold;
+}
+
+.select {
+  width: 100%; /* Make select fill the container width */
+  max-width: 400px; /* Set a max-width for larger screens */
+  padding: 10px;
+  border: 1px solid #ccc;
+  font-size: 1em;
+  cursor: pointer;
+  box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
+}
+
+.select:hover {
+  border-color: darkgray; /* Darker gray border on hover */
 }
 
 .container {
