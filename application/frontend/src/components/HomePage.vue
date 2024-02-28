@@ -29,8 +29,6 @@
 			</div>
 		</div>
 
-		<button @click="saveAllergies" class="analyze-btn">Save Allergies</button>
-
 		<div v-if="imageSrc" class="image-preview">
 			<h3>Preview Image</h3>
 			<img :src="imageSrc" alt="Uploaded image" class="uploaded-image" />
@@ -44,7 +42,8 @@
 			<div v-html="formattedMarkdown"></div>
 		</div>
 		<div class="loading" v-if="isLoading">
-			<span>Loading...</span>
+			<div class="loader"></div>
+			<!-- Updated part -->
 		</div>
 	</div>
 </template>
@@ -92,6 +91,11 @@ export default {
 			return this.analysis ? this.simpleMarkdownToHtml(this.analysis.text) : '';
 		},
 	},
+	watch: {
+		selectedAllergies(newVal) {
+			this.saveAllergiesAutomatically(newVal);
+		},
+	},
 	methods: {
 		toggleDropdownMenu() {
 			this.showDropdownMenu = !this.showDropdownMenu;
@@ -107,18 +111,19 @@ export default {
 		toggleAllergies() {
 			this.showAllergies = !this.showAllergies;
 		},
-	
+
 		saveAllergies() {
 			console.log('Selected Allergies:', this.selectedAllergies);
-			axios.post('http://localhost:3000/allergies', {
-				text: this.selectedAllergies
-			})
-			.then(response => {
-				console.log(response.data);
-			})
-			.catch(error => {
-				console.error('Error:', error);
-			});
+			axios
+				.post('http://localhost:3000/allergies', {
+					text: this.selectedAllergies,
+				})
+				.then((response) => {
+					console.log(response.data);
+				})
+				.catch((error) => {
+					console.error('Error:', error);
+				});
 		},
 		onFileSelected(event) {
 			this.selectedFile = event.target.files[0];
@@ -178,6 +183,20 @@ export default {
 				.replace(/\n$/gim, '<br />');
 
 			return htmlText.trim();
+		},
+		saveAllergiesAutomatically(selectedAllergies) {
+			axios
+				.post('http://localhost:3000/allergies', {
+					text: selectedAllergies,
+				})
+				.then((response) => {
+					console.log(response.data);
+					// You might want to give feedback to the user that allergies were successfully saved
+				})
+				.catch((error) => {
+					console.error('Error:', error);
+					// Handle error (e.g., show error message to the user)
+				});
 		},
 	},
 };
@@ -279,18 +298,40 @@ h1 {
 	cursor: not-allowed; /* Show that it's not clickable */
 }
 
-.loading {
-	display: flex;
-	justify-content: center;
-	margin-top: 20px; /* Added margin */
+.loader {
+	display: inline-block;
+	width: 80px;
+	height: 80px;
+	position: relative;
+	border: 4px solid #f8f8f8; /* Light grey border */
+	border-top-color: #3498db; /* Blue color */
+	border-radius: 50%;
+	animation: spin 1s ease-in-out infinite;
 }
 
-.loading-circle {
-	border: 5px solid #f3f3f3;
-	border-top: 5px solid #3498db;
+.loader:before {
+	content: '';
+	box-sizing: border-box;
+	position: absolute;
+	top: 0;
+	left: 25%;
+	width: 50%;
+	height: 50%;
+	border: 4px solid #3498db; /* Blue color */
 	border-radius: 50%;
-	width: 50px;
-	height: 50px;
+	animation: spinReverse 1.5s linear infinite;
+}
+
+.loader:after {
+	content: '';
+	box-sizing: border-box;
+	position: absolute;
+	bottom: 0;
+	right: 25%;
+	width: 50%;
+	height: 50%;
+	border: 4px solid #ff3e3e; /* Red color for contrast */
+	border-radius: 50%;
 	animation: spin 2s linear infinite;
 }
 
@@ -303,8 +344,17 @@ h1 {
 	}
 }
 
+@keyframes spinReverse {
+	0% {
+		transform: rotate(360deg);
+	}
+	100% {
+		transform: rotate(0deg);
+	}
+}
+
 .analysis-result {
-	text-align: center;
+	text-align: left;
 	margin-top: 20px; /* Added margin */
 }
 
