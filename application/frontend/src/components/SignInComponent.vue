@@ -1,23 +1,46 @@
 <template>
 	<div class="signin-container">
 		<h2>Sign Up</h2>
-		<input v-model="email" type="email" placeholder="Email" />
-		<input v-model="password" type="password" placeholder="Password" />
+		<input
+			v-model="email"
+			type="email"
+			placeholder="Email"
+			:class="{ 'input-error': emailError }"
+		/>
+		<p v-if="emailError" class="error-message">{{ emailError }}</p>
+
+		<input
+			v-model="password"
+			type="password"
+			placeholder="Password"
+			:class="{ 'input-error': passwordError }"
+		/>
+		<p v-if="passwordError" class="error-message">{{ passwordError }}</p>
+
 		<input
 			v-model="passwordConfirm"
 			type="password"
 			placeholder="Confirm Password"
+			:class="{ 'input-error': passwordConfirmError }"
 		/>
-		<button @click="signUp">Sign Up</button>
-		<button @click="navigateToLogin">Login Instead</button>
+		<p v-if="passwordConfirmError" class="error-message">{{
+			passwordConfirmError
+		}}</p>
 
-		<p v-if="error">{{ error }}</p>
+		<button @click="signUp" :disabled="isLoading">
+			<span v-if="isLoading">Signing Up...</span>
+			<span v-else>Sign Up</span>
+		</button>
+		<button @click="navigateToLogin" :disabled="isLoading"
+			>Login Instead</button
+		>
+
+		<p v-if="error" class="error-message">{{ error }}</p>
 	</div>
 </template>
 
 <script>
 import { ref } from 'vue';
-// eslint-disable-next-line no-unused-vars
 import { useRouter } from 'vue-router';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 
@@ -28,31 +51,73 @@ export default {
 		const password = ref('');
 		const passwordConfirm = ref('');
 		const error = ref('');
+		const emailError = ref('');
+		const passwordError = ref('');
+		const passwordConfirmError = ref('');
+		const isLoading = ref(false); // Add this line
 		const auth = getAuth();
 
 		const router = useRouter();
+
+		const validateInput = () => {
+			emailError.value = '';
+			passwordError.value = '';
+			passwordConfirmError.value = '';
+			let isValid = true;
+			if (!email.value) {
+				emailError.value = 'Email is required.';
+				isValid = false;
+			}
+			if (!password.value) {
+				passwordError.value = 'Password is required.';
+				isValid = false;
+			}
+			if (password.value !== passwordConfirm.value) {
+				passwordConfirmError.value = 'Passwords do not match.';
+				isValid = false;
+			}
+			return isValid;
+		};
+
 		const navigateToLogin = () => {
 			router.push('/login');
 		};
 
 		const signUp = async () => {
-			if (password.value !== passwordConfirm.value) {
-				error.value = 'Passwords do not match.'; // Check if passwords match
-				return; // Stop the sign-up process if they don't
-			}
+			if (!validateInput()) return;
+			isLoading.value = true; // Enable loading state
 			try {
 				await createUserWithEmailAndPassword(auth, email.value, password.value);
 				router.push('/');
 			} catch (err) {
-				error.value = err.message;
+				switch (err.code) {
+					case 'auth/email-already-in-use':
+						error.value = 'This email is already in use.';
+						break;
+					case 'auth/invalid-email':
+						error.value = 'Invalid email format.';
+						break;
+					case 'auth/weak-password':
+						error.value = 'Password is too weak.';
+						break;
+					default:
+						error.value = 'An error occurred during sign up.';
+						break;
+				}
+			} finally {
+				isLoading.value = false; // Disable loading state
 			}
 		};
 
 		return {
 			email,
 			password,
-			error,
 			passwordConfirm,
+			error,
+			emailError,
+			passwordError,
+			passwordConfirmError,
+			isLoading, // Make sure to return this
 			signUp,
 			navigateToLogin,
 		};
@@ -62,17 +127,21 @@ export default {
 
 /* LoginComponent.vue and SignInComponent.vue */
 <style scoped>
-.login-container,
 .signin-container {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	padding: 20px;
+	padding: 100px;
 	border: 1px solid #ccc;
 	border-radius: 4px;
-	margin: auto;
-	max-width: 400px;
+	max-width: 1400px;
+
+	/* New styles to center the container on the screen */
+	position: fixed; /* or fixed */
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
 }
 
 h2 {
