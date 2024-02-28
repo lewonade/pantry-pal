@@ -22,6 +22,26 @@ app.use(cors());
 // Set up Multer for file handling
 const storage = multer.memoryStorage(); // Use memory storage for files before uploading to Firebase
 const upload = multer({ storage: storage });
+let savedAllergies = [];
+
+// Endpoint to handle POST requests for allergies
+app.post('/allergies', (req, res) => {
+	// Extract allergies from the request body
+	const allergies = req.body.text;
+	console.log('Received allergies:', allergies);
+	savedAllergies = allergies; // Store allergies as an array
+  
+	// TODO: Implement your logic to process or save the allergies here
+
+	// Sending back a response to the client
+	res.json({
+	  status: 'success',
+	  message: 'Allergies received and processed',
+	  receivedAllergies: savedAllergies
+	});
+  });
+  
+
 
 app.post('/analyze-image', upload.single('image'), async (req, res) => {
 	console.log('Received request for image analysis');
@@ -46,7 +66,8 @@ app.post('/analyze-image', upload.single('image'), async (req, res) => {
 
 		const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
 		console.log(`File uploaded to ${publicUrl}`);
-
+		const allergiesText = savedAllergies.length > 0 ? `Please avoid receipes with the following allergies: ${savedAllergies.join(', ')}.` : '';
+		console.log(allergiesText);
 		// Now you can use `publicUrl` with the OpenAI API
 		try {
 			const response = await openai.chat.completions.create({
@@ -59,7 +80,7 @@ app.post('/analyze-image', upload.single('image'), async (req, res) => {
 						content: [
 							{
 								type: 'text',
-								text: "Pantry Pal is designed to analyze images of a user's fridge or pantry and provide 3-6 diverse recipe suggestions based on the visible ingredients and a specific list of standard pantry items provided by the user. This list includes various spices, herbs, water, tea, coffee, oils & fats, canned goods, grain products, baking ingredients, and bread. The GPT will suggest recipes that can be completely prepared with the available ingredients. Each recipe suggestion will be accompanied by a detailed, step-by-step preparation guide, making it easy to understand and follow. The guide will include instructions on how to slice, cook, season, and assemble the dish, ensuring clarity for users of all cooking levels. Optional ingredients will be clearly marked, indicating they can be omitted. Pantry Pal's goal is to inspire culinary creativity and reduce food waste by helping users utilize what they have on hand, while ensuring the cooking process is accessible and enjoyable.",
+								text: "Pantry Pal is designed to analyze images of a user's fridge or pantry and provide 3-6 diverse recipe suggestions based on the visible ingredients and a specific list of standard pantry items provided by the user. This list includes various spices, herbs, water, tea, coffee, oils & fats, canned goods, grain products, baking ingredients, and bread. ${allergiesText} The GPT will suggest recipes that can be completely prepared with the available ingredients. Each recipe suggestion will be accompanied by a detailed, step-by-step preparation guide, making it easy to understand and follow. The guide will include instructions on how to slice, cook, season, and assemble the dish, ensuring clarity for users of all cooking levels. Optional ingredients will be clearly marked, indicating they can be omitted. Pantry Pal's goal is to inspire culinary creativity and reduce food waste by helping users utilize what they have on hand, while ensuring the cooking process is accessible and enjoyable.",
 							},
 							{
 								type: 'image_url',
