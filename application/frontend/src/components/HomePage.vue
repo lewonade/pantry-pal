@@ -2,6 +2,14 @@
 	<div class="container">
 		<h1>Pantry-Pal</h1>
 
+		<!-- Dropdown Menu Trigger -->
+		<div class="menu-container">
+			<button @click="toggleDropdownMenu" class="menu-trigger">Menu</button>
+			<div v-if="showDropdownMenu" class="dropdown-menu">
+				<button @click="logout" class="dropdown-item">Log Out</button>
+			</div>
+		</div>
+
 		<button @click="toggleAllergies" class="analyze-btn">{{
 			allergiesButtonLabel
 		}}</button>
@@ -28,9 +36,9 @@
 			<img :src="imageSrc" alt="Uploaded image" class="uploaded-image" />
 		</div>
 		<input type="file" @change="onFileSelected" class="choose-btn" />
-		<button @click="analyzeImage" class="analyze-btn" :disabled="isLoading">
-			Analyze Image
-		</button>
+		<button @click="analyzeImage" class="analyze-btn" :disabled="isLoading"
+			>Analyze Image</button
+		>
 		<div class="analysis-result" v-if="analysis">
 			<h3>Analysis Result:</h3>
 			<div v-html="formattedMarkdown"></div>
@@ -42,13 +50,17 @@
 </template>
 
 <script>
+import { signOut } from 'firebase/auth';
 import axios from 'axios';
+import { auth } from '../main.js';
 
 export default {
 	name: 'HomePage',
 	data() {
 		return {
+			showLogin: true,
 			showAllergies: false,
+			showDropdownMenu: false,
 			selectedFile: null,
 			analysis: null,
 			isLoading: false,
@@ -81,15 +93,33 @@ export default {
 		},
 	},
 	methods: {
+		toggleDropdownMenu() {
+			this.showDropdownMenu = !this.showDropdownMenu;
+		},
+		async logout() {
+			try {
+				await signOut(auth);
+				window.location.reload();
+			} catch (error) {
+				console.error('Logout Error:', error);
+			}
+		},
 		toggleAllergies() {
 			this.showAllergies = !this.showAllergies;
 		},
-
+	
 		saveAllergies() {
 			console.log('Selected Allergies:', this.selectedAllergies);
-			//bing bong
+			axios.post('http://localhost:3000/allergies', {
+				text: this.selectedAllergies
+			})
+			.then(response => {
+				console.log(response.data);
+			})
+			.catch(error => {
+				console.error('Error:', error);
+			});
 		},
-
 		onFileSelected(event) {
 			this.selectedFile = event.target.files[0];
 			this.createImageSrc(this.selectedFile);
@@ -155,6 +185,36 @@ export default {
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&display=swap');
+
+.menu-container {
+	position: relative;
+	display: inline-block;
+}
+
+.dropdown-menu {
+	display: none;
+	position: absolute;
+	background-color: #f9f9f9;
+	min-width: 160px;
+	box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+	z-index: 1;
+}
+
+.dropdown-menu .dropdown-item {
+	color: black;
+	padding: 12px 16px;
+	text-decoration: none;
+	display: block;
+}
+
+.menu-container .menu-trigger:after {
+	content: '\25BC';
+	padding-left: 5px;
+}
+
+.menu-container:hover .dropdown-menu {
+	display: block;
+}
 
 * {
 	font-family: 'Mulish', sans-serif;
