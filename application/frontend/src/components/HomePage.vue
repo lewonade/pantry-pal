@@ -1,374 +1,440 @@
 <template>
-	<div class="container">
-		<h1>Pantry-Pal</h1>
+  <div class="container">
+    <h1>Pantry-Pal</h1>
 
-		<!-- Dropdown Menu Trigger -->
-		<div class="menu-container">
-			<button @click="toggleDropdownMenu" class="menu-trigger">Menu</button>
-			<div v-if="showDropdownMenu" class="dropdown-menu">
-				<button @click="logout" class="dropdown-item">Log Out</button>
-			</div>
-		</div>
+    <!-- Dropdown Menu Trigger -->
+    <div class="menu-container">
+      <img
+        src="@/assets/gear.png"
+        @click="toggleDropdownMenu"
+        class="menu-trigger"
+        alt="Menu"
+      />
 
-		<button @click="toggleAllergies" class="analyze-btn">{{
-			allergiesButtonLabel
-		}}</button>
-		<div>
-			<div class="allergy-checkboxes">
-				<div v-if="showAllergies">
-					<div v-for="allergy in allergies" :key="allergy">
-						<input
-							type="checkbox"
-							:id="allergy"
-							:value="allergy"
-							v-model="selectedAllergies"
-						/>
-						<label :for="allergy">{{ allergy }}</label>
-					</div>
-				</div>
-			</div>
-		</div>
+      <div v-if="showDropdownMenu" class="dropdown-menu" style="display: block">
+        <button @click="logout" class="dropdown-item">Log Out</button>
+      </div>
+    </div>
 
-		<div v-if="imageSrc" class="image-preview">
-			<h3>Preview Image</h3>
-			<img :src="imageSrc" alt="Uploaded image" class="uploaded-image" />
-		</div>
-		<input type="file" @change="onFileSelected" class="choose-btn" />
-		<button @click="analyzeImage" class="analyze-btn" :disabled="isLoading"
-			>Analyze Image</button
-		>
-		<div class="analysis-result" v-if="analysis">
-			<h3>Analysis Result:</h3>
-			<div v-html="formattedMarkdown"></div>
-		</div>
-		<div class="loading" v-if="isLoading">
-			<div class="loader"></div>
-			<!-- Updated part -->
-		</div>
-	</div>
+    <button @click="toggleAllergies" class="analyze-btn">
+      {{ allergiesButtonLabel }}
+    </button>
+    <div>
+      <div class="allergy-checkboxes">
+        <div v-if="showAllergies">
+          <div v-for="allergy in allergies" :key="allergy">
+            <input
+              type="checkbox"
+              :id="allergy"
+              :value="allergy"
+              v-model="selectedAllergies"
+            />
+            <label :for="allergy">{{ allergy }}</label>
+          </div>
+        </div>
+      </div>
+      <br />
+      <br />
+    </div>
+
+    <div v-if="imageSrc" class="image-preview">
+      <img :src="imageSrc" alt="Uploaded image" class="uploaded-image" />
+    </div>
+    <div class="file-drop-container" v-show="!isLoading">
+      <input
+        type="file"
+        id="file"
+        class="file-input"
+        @change="onFileSelected"
+      />
+      <label for="file" class="file-input-label">
+        <span class="icon-upload">➕</span> Upload Image
+      </label>
+      <p class="drop-zone-text">
+        Drop an image or choose one from your explorer<br />
+        Supported formats: .png .jpeg .jpg .webp .heic
+      </p>
+    </div>
+
+    <div class="analysis-result" v-if="analysis">
+      <h3>Analysis Result:</h3>
+      <div v-html="formattedMarkdown"></div>
+    </div>
+    <div class="loading" v-if="isLoading">
+      <div class="loader"></div>
+    </div>
+  </div>
+  <footer class="site-footer">
+    <div class="footer-content">
+      <p>© 2024 Pantry-Pal. All rights reserved.</p>
+      <a href="https://rickroll.it/rickroll.mp4">Privacy Policy</a> |
+      <a href="mailto:clemens.dancso@student.htldornbirn.at">Contact Us</a>
+    </div>
+  </footer>
 </template>
 
 <script>
-import { signOut } from 'firebase/auth';
-import axios from 'axios';
-import { auth } from '../main.js';
+import { signOut } from "firebase/auth";
+import axios from "axios";
+import { auth } from "../main.js";
 
 export default {
-	name: 'HomePage',
-	data() {
-		return {
-			showLogin: true,
-			showAllergies: false,
-			showDropdownMenu: false,
-			selectedFile: null,
-			analysis: null,
-			isLoading: false,
-			imageSrc: null,
-			selectedAllergies: [],
-			allergies: [
-				'A - glutenhaltiges Getreide',
-				'B - Krebstiere',
-				'C - Ei',
-				'D - Fisch',
-				'E - Erdnuss',
-				'F - Soja',
-				'G - Milch oder Laktose',
-				'H - Schalenfrüchte',
-				'L - Sellerie',
-				'M - Senf',
-				'N - Sesam',
-				'O - Sulfite',
-				'P - Lupinen',
-				'R - Weichtiere',
-			],
-		};
-	},
-	computed: {
-		allergiesButtonLabel() {
-			return this.showAllergies ? 'Hide Allergies' : 'Show Allergies';
-		},
-		formattedMarkdown() {
-			return this.analysis ? this.simpleMarkdownToHtml(this.analysis.text) : '';
-		},
-	},
-	watch: {
-		selectedAllergies(newVal) {
-			this.saveAllergiesAutomatically(newVal);
-		},
-	},
-	methods: {
-		toggleDropdownMenu() {
-			this.showDropdownMenu = !this.showDropdownMenu;
-		},
-		async logout() {
-			try {
-				await signOut(auth);
-				window.location.reload();
-			} catch (error) {
-				console.error('Logout Error:', error);
-			}
-		},
-		toggleAllergies() {
-			this.showAllergies = !this.showAllergies;
-		},
+  name: "HomePage",
+  data() {
+    return {
+      showLogin: true,
+      showAllergies: false,
+      showDropdownMenu: false,
+      selectedFile: null,
+      analysis: null,
+      isLoading: false,
+      imageSrc: null,
+      selectedAllergies: [],
+      errorMessage: null,
+      allergies: [
+        "A - Cereals containing gluten",
+        "B - Crustaceans",
+        "C - Eggs",
+        "D - Fish",
+        "E - Peanuts",
+        "F - Soy",
+        "G - Milk or lactose",
+        "H - Nuts",
+        "L - Celery",
+        "M - Mustard",
+        "N - Sesame",
+        "O - Sulfites",
+        "P - Lupins",
+        "R - Molluscs",
+      ],
+    };
+  },
+  computed: {
+    allergiesButtonLabel() {
+      return this.showAllergies ? "Hide Allergies" : "Show Allergies";
+    },
+    formattedMarkdown() {
+      return this.analysis ? this.simpleMarkdownToHtml(this.analysis.text) : "";
+    },
+  },
+  watch: {
+    selectedAllergies(newVal) {
+      this.saveAllergiesAutomatically(newVal);
+    },
+  },
+  methods: {
+    toggleDropdownMenu() {
+      this.showDropdownMenu = !this.showDropdownMenu;
+    },
+    async logout() {
+      try {
+        await signOut(auth);
+        window.location.reload();
+      } catch (error) {
+        console.error("Logout Error:", error);
+      }
+    },
+    toggleAllergies() {
+      this.showAllergies = !this.showAllergies;
+    },
+    onFileSelected(event) {
+      this.selectedFile = event.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.imageSrc = e.target.result;
+        this.$nextTick(() => {
+          this.analyzeImage();
+        });
+      };
+      reader.readAsDataURL(this.selectedFile);
+    },
+    async analyzeImage() {
+      this.isLoading = true;
 
-		saveAllergies() {
-			console.log('Selected Allergies:', this.selectedAllergies);
-			axios
-				.post('http://localhost:3000/allergies', {
-					text: this.selectedAllergies,
-				})
-				.then((response) => {
-					console.log(response.data);
-				})
-				.catch((error) => {
-					console.error('Error:', error);
-				});
-		},
-		onFileSelected(event) {
-			this.selectedFile = event.target.files[0];
-			this.createImageSrc(this.selectedFile);
-		},
-		createImageSrc(file) {
-			if (file) {
-				const reader = new FileReader();
-				reader.onload = (e) => {
-					this.imageSrc = e.target.result;
-				};
-				reader.readAsDataURL(file);
-			}
-		},
-		async analyzeImage() {
-			if (!this.selectedFile) {
-				alert('Please select a file first.');
-				return;
-			}
+      const formData = new FormData();
+      formData.append("image", this.selectedFile);
 
-			this.isLoading = true;
+      try {
+        const response = await axios.post(
+          "http://localhost:3000/analyze-image",
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
 
-			const formData = new FormData();
-			formData.append('image', this.selectedFile);
+        this.analysis = {
+          text: response.data.text || "No text analysis available.",
+        };
+      } catch (error) {
+        console.error("Error analyzing image:", error);
+        this.analysis = { text: "Failed to analyze image due to an error." };
+      } finally {
+        this.isLoading = false;
+        this.$nextTick(() => {
+          const analysisResultElement =
+            document.querySelector(".analysis-result");
+          if (analysisResultElement) {
+            analysisResultElement.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+          }
+        });
+      }
+    },
 
-			try {
-				const response = await axios.post(
-					'http://localhost:3000/analyze-image',
-					formData,
-					{
-						headers: {
-							'Content-Type': 'multipart/form-data',
-						},
-					}
-				);
+    simpleMarkdownToHtml(markdownText) {
+      const htmlText = markdownText
+        .replace(/^### (.*$)/gim, "<h3>$1</h3>")
+        .replace(/^## (.*$)/gim, "<h2>$1</h2>")
+        .replace(/^# (.*$)/gim, "<h1>$1</h1>")
+        .replace(/^> (.*$)/gim, "<blockquote>$1</blockquote>")
+        .replace(/\*\*(.*)\*\*/gim, "<strong>$1</strong>")
+        .replace(/\*(.*)\*/gim, "<em>$1</em>")
+        .replace(/\[(.*?)\]\((.*?)\)/gim, "<a href='$2'>$1</a>")
+        .replace(/\n/gim, "<br />");
 
-				this.analysis = {
-					text: response.data.text || 'No text analysis available.',
-				};
-			} catch (error) {
-				console.error('Error analyzing image:', error);
-				this.analysis = { text: 'Failed to analyze image due to an error.' };
-			} finally {
-				this.isLoading = false;
-			}
-		},
-		simpleMarkdownToHtml(markdownText) {
-			const htmlText = markdownText
-				.replace(/^### (.*$)/gim, '<h3>$1</h3>')
-				.replace(/^## (.*$)/gim, '<h2>$1</h2>')
-				.replace(/^# (.*$)/gim, '<h1>$1</h1>')
-				.replace(/^ (.*$)/gim, '<blockquote>$1</blockquote>')
-				.replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
-				.replace(/\*(.*)\*/gim, '<em>$1</em>')
-				.replace(/\[(.*?)\]\((.*?)\)/gim, "<img alt='$1' src='$2' />")
-				.replace(/\[(.*?)\]\((.*?)\)/gim, "<a href='$2'>$1</a>")
-				.replace(/\n$/gim, '<br />');
-
-			return htmlText.trim();
-		},
-		saveAllergiesAutomatically(selectedAllergies) {
-			axios
-				.post('http://localhost:3000/allergies', {
-					text: selectedAllergies,
-				})
-				.then((response) => {
-					console.log(response.data);
-					// You might want to give feedback to the user that allergies were successfully saved
-				})
-				.catch((error) => {
-					console.error('Error:', error);
-					// Handle error (e.g., show error message to the user)
-				});
-		},
-	},
+      return htmlText.trim();
+    },
+    saveAllergiesAutomatically(selectedAllergies) {
+      axios
+        .post("http://localhost:3000/allergies", {
+          text: selectedAllergies,
+        })
+        .then((response) => {
+          console.log("Allergies saved:", response.data);
+        })
+        .catch((error) => {
+          console.error("Error saving allergies:", error);
+        });
+    },
+  },
 };
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&display=swap');
-
-.menu-container {
-	position: relative;
-	display: inline-block;
-}
-
-.dropdown-menu {
-	display: none;
-	position: absolute;
-	background-color: #f9f9f9;
-	min-width: 160px;
-	box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
-	z-index: 1;
-}
-
-.dropdown-menu .dropdown-item {
-	color: black;
-	padding: 12px 16px;
-	text-decoration: none;
-	display: block;
-}
-
-.menu-container .menu-trigger:after {
-	content: '\25BC';
-	padding-left: 5px;
-}
-
-.menu-container:hover .dropdown-menu {
-	display: block;
-}
+@import url("https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&display=swap");
 
 * {
-	font-family: 'Mulish', sans-serif;
-}
-
-.label {
-	margin-bottom: 0.5em; /* Space between label and select */
-	font-size: 1.2em;
-	color: #333; /* Update color as needed */
-	font-weight: bold;
-}
-
-.select {
-	width: 100%; /* Make select fill the container width */
-	max-width: 400px; /* Set a max-width for larger screens */
-	padding: 10px;
-	border: 1px solid #ccc;
-	font-size: 1em;
-	cursor: pointer;
-	box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
-}
-
-.select:hover {
-	border-color: darkgray; /* Darker gray border on hover */
+  font-family: "Mulish", sans-serif;
 }
 
 .container {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: flex-start; /* Changed to start at the top */
-	padding-top: 20px; /* Added padding at the top */
-	width: 80%; /* Adjust the width as needed */
-	margin: auto; /* Center the container */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 20px;
+  width: 80%;
+  max-width: 1000px;
+  margin: auto;
+  padding-bottom: 200px;
 }
 
 h1 {
-	margin-bottom: 20px; /* Space between the title and the rest */
+  margin-bottom: 20px;
 }
 
-.choose-btn,
+.menu-container {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.menu-trigger {
+  width: 30px;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.menu-trigger:hover {
+  transform: scale(1.1);
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  background-color: #f9f9f9;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 10px 0;
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+  width: 100px;
+}
+
+.dropdown-menu .dropdown-item {
+  width: fit-content;
+  color: black;
+  padding: 10px 20px;
+  text-decoration: none;
+  display: block;
+  border-bottom: 1px solid #eee;
+}
+
+.dropdown-menu .dropdown-item:hover {
+  background-color: #e6e6e6;
+}
+
+.dropdown-menu .dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.menu-container:hover .dropdown-menu {
+  display: block;
+}
+
+.file-drop-container {
+  border: 2px dashed #ddd;
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  background: #f8f8f8;
+  transition: background-color 0.3s;
+  max-width: 600px;
+  margin: auto;
+}
+
+.file-input {
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  position: absolute;
+  z-index: -1;
+}
+
+.file-input-label {
+  display: inline-block;
+  padding: 10px 20px;
+  font-size: 1.25rem;
+  color: white;
+  background-color: #4caf50;
+  border-radius: 5px;
+  cursor: pointer;
+  margin: 10px;
+  transition: all 0.3s;
+}
+
+.file-input-label:hover {
+  background-color: #42c56e;
+}
+.file-drop-container:hover {
+  background-color: #e3eaf1;
+  color: white;
+}
+
+.file-input-label:active {
+  transform: scale(0.98);
+}
+
+.drop-zone-text {
+  color: #555;
+  margin-top: 8px;
+}
+
 .analyze-btn {
-	margin: 10px 0;
-	padding: 10px 20px;
-	border: 1px solid black;
-	border-radius: 4px;
-	cursor: pointer; /* Add a pointer cursor on hover */
+  background-color: #4caf50;
+  color: white;
+  margin: 10px 0;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
 }
 
-.choose-btn {
-	background-color: #f8f8f8;
-}
-
-.analyze-btn {
-	background-color: #4caf50; /* Green color */
-	color: white;
+.analyze-btn:hover {
+  background-color: #42c56e;
+  color: white;
+  margin: 10px 0;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 .analyze-btn:disabled {
-	background-color: #ccc;
-	color: #666;
-	cursor: not-allowed; /* Show that it's not clickable */
+  background-color: #ccc;
+  color: #666;
+  cursor: not-allowed;
 }
 
 .loader {
-	display: inline-block;
-	width: 80px;
-	height: 80px;
-	position: relative;
-	border: 4px solid #f8f8f8; /* Light grey border */
-	border-top-color: #3498db; /* Blue color */
-	border-radius: 50%;
-	animation: spin 1s ease-in-out infinite;
-}
-
-.loader:before {
-	content: '';
-	box-sizing: border-box;
-	position: absolute;
-	top: 0;
-	left: 25%;
-	width: 50%;
-	height: 50%;
-	border: 4px solid #3498db; /* Blue color */
-	border-radius: 50%;
-	animation: spinReverse 1.5s linear infinite;
-}
-
-.loader:after {
-	content: '';
-	box-sizing: border-box;
-	position: absolute;
-	bottom: 0;
-	right: 25%;
-	width: 50%;
-	height: 50%;
-	border: 4px solid #ff3e3e; /* Red color for contrast */
-	border-radius: 50%;
-	animation: spin 2s linear infinite;
+  display: inline-block;
+  width: 80px;
+  height: 80px;
+  position: relative;
+  border: 4px solid #f8f8f8; /* Light grey border */
+  border-top-color: #005b97; /* Blue color */
+  border-radius: 50%;
+  animation: spin 1s ease-in-out infinite;
 }
 
 @keyframes spin {
-	0% {
-		transform: rotate(0deg);
-	}
-	100% {
-		transform: rotate(360deg);
-	}
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes spinReverse {
-	0% {
-		transform: rotate(360deg);
-	}
-	100% {
-		transform: rotate(0deg);
-	}
+  0% {
+    transform: rotate(360deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
 }
 
 .analysis-result {
-	text-align: left;
-	margin-top: 20px; /* Added margin */
+  text-align: left;
+  margin-top: 20px; /* Added margin */
 }
 
 .image-preview {
-	margin: 10px;
-	text-align: center;
-	border: 1px solid #ddd; /* Added border */
-	padding: 5px; /* Added padding */
-	width: 300px; /* Fixed width for consistency */
+  margin: 50px;
+  text-align: center;
+  border: 1px solid #ffffff; /* Existing border */
+  overflow: hidden; /* Hide overflow to ensure rounded corners are visible */
+  width: auto; /* Adjust width as needed or remove it to fit the image */
+  max-width: 100%; /* Ensure it doesn't exceed its container's width */
+  border-radius: 15px; /* Adjust for smoother corners */
 }
 
 .uploaded-image {
-	max-width: 100%;
-	height: auto; /* Ensure the aspect ratio is maintained */
-	border-radius: 4px; /* Rounded corners for the image */
+  width: 100%; /* Ensure the image fills the container */
+  height: auto; /* Maintain aspect ratio */
+  border-radius: 15px; /* Match parent's border-radius for consistency */
+}
+
+.site-footer {
+  width: 100%;
+  background-color: #f8f8f8;
+  padding: 20px 0;
+  text-align: center;
+  border-top: 1px solid #ddd;
+  margin-top: 40px; /* Adjust based on your layout */
+  position: fixed;
+  bottom: 0;
+}
+
+.footer-content p,
+.footer-content a {
+  color: #555;
+  font-size: 16px;
+  text-decoration: none;
+  margin: 0 10px;
+}
+
+.footer-content a:hover {
+  text-decoration: underline;
 }
 </style>
