@@ -1,8 +1,6 @@
 <template>
   <div class="container">
     <h1>Pantry-Pal</h1>
-
-    <!-- Dropdown Menu Trigger -->
     <div class="menu-container">
       <img
         src="@/assets/gear.png"
@@ -370,8 +368,8 @@ h1 {
   width: 80px;
   height: 80px;
   position: relative;
-  border: 4px solid #f8f8f8; /* Light grey border */
-  border-top-color: #005b97; /* Blue color */
+  border: 4px solid #f8f8f8;
+  border-top-color: #005b97;
   border-radius: 50%;
   animation: spin 1s ease-in-out infinite;
 }
@@ -396,23 +394,23 @@ h1 {
 
 .analysis-result {
   text-align: left;
-  margin-top: 20px; /* Added margin */
+  margin-top: 20px;
 }
 
 .image-preview {
   margin: 50px;
   text-align: center;
-  border: 1px solid #ffffff; /* Existing border */
-  overflow: hidden; /* Hide overflow to ensure rounded corners are visible */
-  width: auto; /* Adjust width as needed or remove it to fit the image */
-  max-width: 100%; /* Ensure it doesn't exceed its container's width */
-  border-radius: 15px; /* Adjust for smoother corners */
+  border: 1px solid #ffffff;
+  overflow: hidden;
+  width: auto;
+  max-width: 100%;
+  border-radius: 15px;
 }
 
 .uploaded-image {
-  width: 100%; /* Ensure the image fills the container */
-  height: auto; /* Maintain aspect ratio */
-  border-radius: 15px; /* Match parent's border-radius for consistency */
+  width: 100%;
+  height: auto;
+  border-radius: 15px;
 }
 
 .site-footer {
@@ -421,7 +419,7 @@ h1 {
   padding: 20px 0;
   text-align: center;
   border-top: 1px solid #ddd;
-  margin-top: 40px; /* Adjust based on your layout */
+  margin-top: 40px;
   position: fixed;
   bottom: 0;
 }
